@@ -1,0 +1,24 @@
+from pathlib import Path
+
+from dotenv import load_dotenv
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+ENV_FILEPATH = Path(__file__).parents[1] / ".env"
+
+class Config(BaseSettings):
+    """
+    Configurations for the application
+    """
+
+    model_config = SettingsConfigDict(
+        env_file=ENV_FILEPATH,
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+    APP_NAME: str
+    TRAIN_TEST_SPLIT: float
+    SEED: int
+
+
+load_dotenv(ENV_FILEPATH)
+config = Config()
