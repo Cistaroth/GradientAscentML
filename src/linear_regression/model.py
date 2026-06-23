@@ -183,13 +183,13 @@ class LinearRegression():
 
         return X @ self._weights
     
-    def forget(self, X: pd.DataFrame, y: pd.Series) -> LinearRegression:
+    def forget(self, X: pd.DataFrame | np.ndarray, y: pd.Series | np.ndarray) -> LinearRegression:
         """
         Forget the specified data used to fit the model
 
         Args:
-            X (pd.DataFrame): The data to forget
-            y (pd.Series): The target data to forget
+            X (pd.DataFrame | np.ndarray): The data to forget
+            y (pd.Series | np.ndarray): The target data to forget
 
         Returns:
             LinearRegression: The model
@@ -209,7 +209,11 @@ class LinearRegression():
         if X.shape[1] != self._weights.shape[0] - 1:
             raise ValueError("The number of features in X does not match the number of weights in the model")
         
-        X, y = np.asarray(X.values), np.asarray(y.values)
+        if isinstance(X, pd.DataFrame):
+            X = X.to_numpy()
+        if isinstance(y, pd.Series):
+            y = y.to_numpy()
+            
         X = self._design_matrix(X)
 
         gram = self._gram - X.T @ X
