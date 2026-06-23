@@ -183,44 +183,6 @@ class LinearRegression():
 
         return X @ self._weights
     
-    def r2_score(self, X: pd.DataFrame, y: pd.Series) -> float:
-        """
-        Calculate r2 score
-        
-        Args:
-            X (pd.DataFrame): The input data
-            y (pd.Series): The target data
-
-        Returns:
-            float: The r2 score
-        """
-        if X.shape[0] != y.shape[0]:
-            raise ValueError("X and y must have the same number of rows")
-        
-        y = np.asarray(y.values)
-        y_pred = self.predict(X)
-        ss_res = np.power(y - y_pred, 2).sum()
-        ss_tot = np.power(y - y.mean(), 2).sum()
-        return 1 - ss_res / ss_tot
-    
-    def mse_score(self, X: pd.DataFrame, y: pd.Series) -> float:
-        """
-        Calculate mse score
-        
-        Args:
-            X (pd.DataFrame): The input data
-            y (pd.Series): The target data
-
-        Returns:
-            float: The mse score
-        """
-        if X.shape[0] != y.shape[0]:
-            raise ValueError("X and y must have the same number of rows")
-        
-        y = np.asarray(y.values)
-        y_pred = self.predict(X)
-        return np.power(y - y_pred, 2).mean()
-    
     def forget(self, X: pd.DataFrame, y: pd.Series) -> LinearRegression:
         """
         Forget the specified data used to fit the model
