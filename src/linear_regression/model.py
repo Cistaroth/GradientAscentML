@@ -31,7 +31,6 @@ class LinearRegression():
         Returns:
             None
         """
-        # TODO: Add validation checks
 
         self._weights, self._gram, self._moment = weights, gram, moment
 
@@ -173,6 +172,9 @@ class LinearRegression():
         if self._gram is None:
             raise ValueError("The gram matrix has not been calculated yet")
         
+        if self._moment is None:
+            raise ValueError("The moment has not been calculated yet")
+        
         if X.shape[1] != self._weights.shape[0] - 1:
             raise ValueError("The number of features in X does not match the number of weights in the model")
         
@@ -204,6 +206,12 @@ class LinearRegression():
         """
         if self._weights is None:
             raise ValueError("The model has not been fitted yet")
+        
+        if self._gram is None:
+            raise ValueError("The gram matrix has not been calculated yet")
+        
+        if self._moment is None:
+            raise ValueError("The moment has not been calculated yet")
         
         weights, gram, moment = func.rebase(self._weights, self._gram, self._moment)
         return LinearRegression(weights=weights, gram=gram, moment=moment)
