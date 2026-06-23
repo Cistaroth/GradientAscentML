@@ -88,5 +88,47 @@ $M_{rebase} = B^TM_{retain}$
 
 $\theta_{rebase} = G_{rebase}^{-1}M_{rebase}$
 
+## Forgetting in Simple Logistic Regression
+> [!IMPORTANT]
+> Central idea: Recompute the Simple Logistic Regression weights
+
+Contrary to simple linear regression, simple logistic regression has no closed-form solution, hence we must rely on approximations. We start by defining the Hessian on the design matrix $\tilde{X} = [\,\mathbf{1} \mid X\,]$ and parameters $\theta$:
+
+$H = \tilde{X}^T \text{diag}(p_i(1-p_i))\tilde{X}$,  $\quad p_i = \tilde{X}_i^T \theta$
+
+Also define the Hessian for forgetting as:
+
+$H_{forget} = \tilde{X}_{forget}^T \text{diag}((p_{forget})_i(1-(p_{forget})_i))\tilde{X}_{forget}$, $\quad (p_{forget})_i = (\tilde{X}_{forget})_i^T \theta$
+
+Then define the gradient of forgetting as:
+
+$g_{forget} = \tilde{X}_{forget}^T (p_{forget} - y_{forget})$, $\quad p_{forget} = \begin{bmatrix} (p_{forget})_1 \\ \vdots \\ (p_{forget})_{|S|} \end{bmatrix} \in \mathbb{R}^{|S|}$
+
+Then:
+
+$H_{retain} = H - H_{forget}$
+
+$\theta_{retain} \approx \theta + H_{retain}^{-1}g_{forget}$
+
+To approve approximations, we can batch rows of the forget set and iteratively update the weights over these batches.
+
+ 
+> [!WARNING]
+> When using forgetting in Simple Logistic Regression with forgetting in Standard Scaling, then weights are not equivalent due to coordinate mapping differences. This must be corrected by rebasing the weights post-hoc.
+
+For this, define the change of basis matrix (equivalent as in linear regression):
+
+$
+B = \begin{bmatrix} 
+1 & \boldsymbol{\tau} \\ 
+\mathbf{0} & D 
+\end{bmatrix}, \text{where} \quad \tau = (\mu - \mu_{retain}) \oslash \sigma_{retain}, \qquad D = \text{diag}(\sigma \oslash \sigma_{retain})$
+
+Then we find that:
+
+$H_{rebase} = B^TH_{retain}B$
+
+$\theta_{rebase} = B^{-1}\theta_{retain}$
+
 ## Credits
 [@Cistaroth](https://github.com/Cistaroth)
