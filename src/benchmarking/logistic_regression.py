@@ -15,13 +15,15 @@ from rich.table import Table
 from rich import box
 from rich.align import Align
 
-from src.linear_regression.model import LinearRegression
-from src.linear_regression.weights_rebasing import LinearRegressionStandardScaleWeightsRebasing
+#from sklearn.linear_model import LogisticRegression
+from src.logistic_regression.model import LogisticRegression
+from src.logistic_regression.weights_rebasing import LogisticRegressionStandardScaleWeightsRebasing
 from src.scalers.standard_scaler import StandardScaler
 from src.config import config
 from src.logging import logger, console
 
 TOLERANCE = 1e-5
+np.random.seed(42)
 
 def load_data() -> tuple[pd.DataFrame, pd.Series]:
     """
@@ -34,7 +36,7 @@ def load_data() -> tuple[pd.DataFrame, pd.Series]:
         pd.Series: The target data
     """
     data = fetch_california_housing(as_frame=True)
-    return data.data, data.target
+    return data.data, (data.target >= data.target.mean()).astype(int)
 
 def preprocess_data(
     X: pd.DataFrame,
@@ -52,25 +54,14 @@ def preprocess_data(
         pd.Series: The preprocessed target data
     """
     X = X.copy()
-    skewed_cols = ["AveRooms", "AveBedrms", "Population", "AveOccup"]
-    for col in skewed_cols:
-        cap_value = X[col].quantile(0.99)
-        X[col] = np.clip(X[col], a_min=None, a_max=cap_value)
-        X[col] = np.log1p(X[col])
-
-    sf_coords = (37.7749, -122.4194)
-    la_coords = (34.0522, -118.2437)
-
-    X["Distance_to_SF"] = np.sqrt((X["Latitude"] - sf_coords[0])**2 + (X["Longitude"] - sf_coords[1])**2)
-    X["Distance_to_LA"] = np.sqrt((X["Latitude"] - la_coords[0])**2 + (X["Longitude"] - la_coords[1])**2)
-    X = X.drop(columns=["Latitude", "Longitude"])
 
     return X, y
+
 
 def fit_retain_model(
     X_retain: pd.DataFrame,
     y_retain: pd.Series
-) -> tuple[LinearRegression, StandardScaler, float]:
+) -> tuple[LogisticRegression, StandardScaler, float]:
     """
     Fit a model on the retained data.
     
@@ -79,17 +70,20 @@ def fit_retain_model(
         y_retain (pd.Series): The target data
         
     Returns:
-        LinearRegression: The fitted model
+        LogisticRegression: The fitted model
         StandardScaler: The fitted scaler
         float: The time taken to fit the model
     """
     console.section("Training Model on Retain Dataset")
 
     start = time.perf_counter()
+    
     scaler = StandardScaler()
     X_transformed = scaler.fit_transform(X_retain)
-    model = LinearRegression()
-    model.fit(X_transformed, y_retain)
+
+    model = LogisticRegression()
+    model.fit(X_transformed, y_retain) 
+
     end = time.perf_counter()
 
     model_time = (end - start) * 1000
@@ -99,7 +93,7 @@ def fit_retain_model(
 def fit_full_model(
     X: pd.DataFrame,
     y: pd.Series
-) -> tuple[LinearRegression, StandardScaler, float]:
+) -> tuple[LogisticRegression, StandardScaler, float]:
     """
     Fit a model on the full data.
     
@@ -108,7 +102,7 @@ def fit_full_model(
         y (pd.Series): The target data
         
     Returns:
-        LinearRegression: The fitted model
+        LogisticRegression: The fitted model
         StandardScaler: The fitted scaler
         float: The time taken to fit the model
     """
@@ -117,7 +111,8 @@ def fit_full_model(
     start = time.perf_counter()
     scaler = StandardScaler()
     X_transformed = scaler.fit_transform(X)
-    model = LinearRegression()
+
+    model = LogisticRegression()
     model.fit(X_transformed, y)
     end = time.perf_counter()
 
@@ -129,8 +124,8 @@ def fit_forget_model(
     X_forget: pd.DataFrame,
     y_forget: pd.Series,
     full_scaler: StandardScaler,
-    full_model: LinearRegression
-) -> tuple[LinearRegression, StandardScaler, float]:
+    full_model: LogisticRegression
+) -> tuple[LogisticRegression, StandardScaler, float]:
     """
     Fit a model on the forget data with proper weights rebasing.
     
@@ -138,10 +133,10 @@ def fit_forget_model(
         X_forget (pd.DataFrame): The input data
         y_forget (pd.Series): The target data
         full_scaler (StandardScaler): The scaler for the full data
-        full_model (LinearRegression): The model for the full data
+        full_model (LogisticRegression): The model for the full data
         
     Returns:
-        LinearRegression: The fitted model
+        LogisticRegression: The fitted model
         StandardScaler: The fitted scaler
         float: The time taken to fit the model
     """
@@ -153,10 +148,12 @@ def fit_forget_model(
     model = full_model.forget(X_transformed, y_forget)
     
     model = model.rebase_weights(
-        func=LinearRegressionStandardScaleWeightsRebasing(
+        func=LogisticRegressionStandardScaleWeightsRebasing(
             source_scaler=full_scaler,
             target_scaler=scaler
-    ))
+        )
+    )
+
     end = time.perf_counter()
 
     model_time = (end - start) * 1000
@@ -171,11 +168,11 @@ def fit_all_models(
     X: pd.DataFrame,
     y: pd.Series
 ) -> tuple[
-    LinearRegression,
+    LogisticRegression,
     StandardScaler,
-    LinearRegression,
+    LogisticRegression,
     StandardScaler,
-    LinearRegression,
+    LogisticRegression,
     StandardScaler,
     float,
     float,
@@ -194,11 +191,11 @@ def fit_all_models(
 
     Returns:
         tuple[
-            LinearRegression,
+            LogisticRegression,
             StandardScaler,
-            LinearRegression,
+            LogisticRegression,
             StandardScaler,
-            LinearRegression,
+            LogisticRegression,
             StandardScaler,
             float,
             float,
@@ -248,17 +245,17 @@ def handle_data() -> tuple[pd.DataFrame, pd.Series, pd.DataFrame, pd.Series, pd.
     return X_retain, y_retain, X_forget, y_forget, X, y
 
 def parameter_overview(
-    retain_model: LinearRegression,
-    full_model: LinearRegression,
-    forget_model: LinearRegression
+    retain_model: LogisticRegression,
+    full_model: LogisticRegression,
+    forget_model: LogisticRegression
 ) -> None:
     """
     Print the parameter overview of the models.
     
     Args:
-        retain_model (LinearRegression): The retain model
-        full_model (LinearRegression): The full model
-        forget_model (LinearRegression): The forget model
+        retain_model (LogisticRegression): The retain model
+        full_model (LogisticRegression): The full model
+        forget_model (LogisticRegression): The forget model
         
     Returns:
         None
@@ -269,9 +266,9 @@ def parameter_overview(
     logger.info(f"◈ Forget Model Weights:\n  {forget_model.weights}")
 
 def model_weight_assertions(
-    retain_model: LinearRegression,
+    retain_model: LogisticRegression,
     retain_scaler: StandardScaler,
-    forget_model: LinearRegression,
+    forget_model: LogisticRegression,
     forget_scaler: StandardScaler,
     X: pd.DataFrame
 ) -> None:
@@ -279,9 +276,9 @@ def model_weight_assertions(
     Perform mathematical parity assertions on the model weights.
     
     Args:
-        retain_model (LinearRegression): The retain model
-        full_model (LinearRegression): The full model
-        forget_model (LinearRegression): The forget model
+        retain_model (LogisticRegression): The retain model
+        full_model (LogisticRegression): The full model
+        forget_model (LogisticRegression): The forget model
         
     Returns:
         None
