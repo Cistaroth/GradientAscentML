@@ -105,7 +105,7 @@ For this, define the change of basis matrix:
 B = \begin{bmatrix}
 1 & \boldsymbol{\tau} \\
 \mathbf{0} & D
-\end{bmatrix}, \quad \text{where} \quad \boldsymbol{\tau} = (\mu - \mu_{retain}) \oslash \sigma_{retain}, \qquad D = \operatorname{diag}(\sigma \oslash \sigma_{retain})
+\end{bmatrix}, \quad \text{where} \quad \boldsymbol{\tau} = (\mu - \mu_{retain}) \oslash \sigma_{retain}, \qquad D = \text{diag}(\sigma \oslash \sigma_{retain})
 ```
 
 Then we find that:
@@ -129,13 +129,13 @@ M_{rebase} = B^TM_{retain}
 Contrary to simple linear regression, simple logistic regression has no closed-form solution, hence we must rely on approximations. We start by defining the Hessian on the design matrix $`\tilde{X} = [\,\mathbf{1} \mid X\,]`$ and parameters $`\theta`$:
 
 ```math
-H = \tilde{X}^T \operatorname{diag}(p_i(1-p_i))\tilde{X}, \qquad p_i = \tilde{X}_i^T \theta
+H = \tilde{X}^T \text{diag}(p_i(1-p_i))\tilde{X}, \qquad p_i = \tilde{X}_i^T \theta
 ```
 
 Also define the Hessian for forgetting as:
 
 ```math
-H_{forget} = \tilde{X}_{forget}^T \operatorname{diag}\big((p_{forget})_i(1-(p_{forget})_i)\big)\tilde{X}_{forget}, \qquad (p_{forget})_i = (\tilde{X}_{forget})_i^T \theta
+H_{forget} = \tilde{X}_{forget}^T \text{diag}\big((p_{forget})_i(1-(p_{forget})_i)\big)\tilde{X}_{forget}, \qquad (p_{forget})_i = (\tilde{X}_{forget})_i^T \theta
 ```
 
 Then define the gradient of forgetting as:
@@ -166,7 +166,7 @@ For this, define the change of basis matrix (equivalent as in linear regression)
 B = \begin{bmatrix}
 1 & \boldsymbol{\tau} \\
 \mathbf{0} & D
-\end{bmatrix}, \quad \text{where} \quad \boldsymbol{\tau} = (\mu - \mu_{retain}) \oslash \sigma_{retain}, \qquad D = \operatorname{diag}(\sigma \oslash \sigma_{retain})
+\end{bmatrix}, \quad \text{where} \quad \boldsymbol{\tau} = (\mu - \mu_{retain}) \oslash \sigma_{retain}, \qquad D = \text{diag}(\sigma \oslash \sigma_{retain})
 ```
 
 Then we find that:
