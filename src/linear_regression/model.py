@@ -31,8 +31,77 @@ class LinearRegression():
         Returns:
             None
         """
+        weights = np.asarray(weights) if weights is not None else None
+        gram = np.asarray(gram) if gram is not None else None
+        moment = np.asarray(moment) if moment is not None else None
 
-        self._weights, self._gram, self._moment = weights, gram, moment
+        if weights is not None and gram is None and moment is None:
+            if weights.ndim != 1:
+                raise ValueError("Weights must be a 1D array.")
+
+        elif weights is None and gram is not None and moment is not None:
+            gram, moment = self._validate_gram_and_moment(gram, moment)
+            try:
+                weights = np.linalg.solve(gram, moment)
+            except np.linalg.LinAlgError:
+                raise ValueError("The provided Gram matrix is singular and cannot be inverted to find weights.")
+
+        elif weights is not None and gram is not None and moment is not None:
+            if weights.ndim != 1:
+                raise ValueError("Weights must be a 1D array.")
+                
+            gram, moment = self._validate_gram_and_moment(gram, moment)
+            
+            if weights.shape[0] != gram.shape[0]:
+                raise ValueError(
+                    f"Shape mismatch: weights shape {weights.shape} does not match Gram/Moment size ({gram.shape[0]})."
+                )
+                
+            if not np.allclose(gram @ weights, moment, rtol=1e-4, atol=1e-4):
+                raise ValueError("Provided weights, gram, and moment are mathematically inconsistent.")
+
+        elif weights is None and gram is None and moment is None:
+            pass
+
+        else:
+            raise ValueError(
+                "Invalid initialization combination. You must provide either:\n"
+                "1. Nothing\n"
+                "2. Weights only\n"
+                "3. Gram and Moment only\n"
+                "4. Weights, Gram, AND Moment"
+            )
+
+        self._weights = weights
+        self._gram = gram
+        self._moment = moment
+
+    def _validate_gram_and_moment(self, gram: np.ndarray, moment: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Validate the Gram matrix and moment
+        
+        Args:
+            gram (np.ndarray): The gram matrix
+            moment (np.ndarray): The moment
+
+        Returns:
+            tuple[np.ndarray, np.ndarray]: The validated Gram matrix and moment
+        """
+        if moment.ndim != 1:
+            raise ValueError("Moment must be a 1D array.")
+            
+        num_features = moment.shape[0]
+        
+        if gram.shape != (num_features, num_features):
+            raise ValueError(
+                f"Shape mismatch: Gram matrix shape {gram.shape} must be square and match moment size ({num_features}, {num_features})."
+            )
+        if not np.allclose(gram, gram.T, atol=1e-8):
+            raise ValueError("The Gram matrix must be symmetric.")
+        if np.any(np.linalg.eigvalsh(gram) < -1e-8):
+            raise ValueError("The Gram matrix must be positive semi-definite.")
+            
+        return gram, moment
 
     @property
     def weights(self) -> np.ndarray | None:
